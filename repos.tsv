@@ -2,6 +2,7 @@
 # Used by scripts/ws.sh (bootstrap/update/status/pin). Sub-repos are cloned as
 # normal independent checkouts on `main` — NOT submodules.
 sema	sema
+pkg	pkg
 ui	ui
 tree-sitter-sema	tree-sitter-sema
 vscode-sema	vscode-sema

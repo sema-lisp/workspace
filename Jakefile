@@ -7,6 +7,7 @@
 # Each member with build recipes ships an `@rooted` Jakefile, so the imports
 # below resolve their relative paths against the member's own dir.
 @import "sema/Jakefile"             as sema
+@import "pkg/Jakefile"              as pkg
 @import "ui/Jakefile"               as ui
 @import "tree-sitter-sema/Jakefile" as ts
 @import "vscode-sema/Jakefile"      as vscode
@@ -46,11 +47,11 @@ task foreach:
 # ── Aggregate build/test across members that expose the recipe ──
 
 @group all
-@desc "Test the members that have a test recipe (sema, ui, grammar, intellij)"
-task test-all: [sema.test, ui.test, ts.test, intellij.test]
+@desc "Test the members that have a test recipe (sema, pkg, ui, grammar, intellij)"
+task test-all: [sema.test, pkg.test, ui.test, ts.test, intellij.test]
     echo "workspace: all member tests complete"
 
 @group all
-@desc "Build the core buildable members (sema, ui bundle, grammar)"
-task build-all: [sema.build, ui.build, ts.generate]
+@desc "Build the core buildable members (sema, pkg, ui bundle, grammar)"
+task build-all: [sema.build, pkg.build, ui.build, ts.generate]
     echo "workspace: core members built"
