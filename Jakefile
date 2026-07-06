@@ -2,11 +2,17 @@
 #
 # Members are normal independent clones (see repos.tsv), NOT submodules. On a
 # fresh clone of this workspace repo, run `./scripts/ws.sh bootstrap` first to
-# clone the members, then `jake -l` shows every member's recipes namespaced.
+# clone the members, then `jake -l` lists every member's recipes.
 #
 # Each member with build recipes ships an `@rooted` Jakefile, so the imports
 # below resolve their relative paths against the member's own dir.
-@import "sema/Jakefile"             as sema
+#
+# The mono (`sema`) is imported BARE — it's the primary repo, so its recipes
+# stay unprefixed at the workspace root (`jake build`, `jake test`, `jake
+# site.dev`, `jake bench.bench`). The other members are namespaced (`ui.test`,
+# `pkg.build`, `ts.test`, …). The mono's own namespaces (site/pg/wasm/bench/
+# fuzz/release) don't collide with the member aliases.
+@import "sema/Jakefile"
 @import "pkg/Jakefile"              as pkg
 @import "ui/Jakefile"               as ui
 @import "tree-sitter-sema/Jakefile" as ts
@@ -48,10 +54,10 @@ task foreach:
 
 @group all
 @desc "Test the members that have a test recipe (sema, pkg, ui, grammar, intellij)"
-task test-all: [sema.test, pkg.test, ui.test, ts.test, intellij.test]
+task test-all: [test, pkg.test, ui.test, ts.test, intellij.test]
     echo "workspace: all member tests complete"
 
 @group all
 @desc "Build the core buildable members (sema, pkg, ui bundle, grammar)"
-task build-all: [sema.build, pkg.build, ui.build, ts.generate]
+task build-all: [build, pkg.build, ui.build, ts.generate]
     echo "workspace: core members built"
