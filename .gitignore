@@ -1,0 +1,13 @@
+# The workspace repo tracks ONLY its own tooling. Every member repo (cloned by
+# scripts/ws.sh) and any scratch dir is ignored — ignore all, then allowlist.
+/*
+!/.gitignore
+!/Jakefile
+!/repos.tsv
+!/repos.lock
+!/.env.example
+!/README.md
+!/scripts/
+
+# Never commit real secrets
+.env

@@ -1,0 +1,15 @@
+# Sema workspace member repos.  <local-dir>\t<github-repo-under-sema-lisp>
+# Used by scripts/ws.sh (bootstrap/update/status/pin). Sub-repos are cloned as
+# normal independent checkouts on `main` — NOT submodules.
+sema	sema
+ui	ui
+tree-sitter-sema	tree-sitter-sema
+vscode-sema	vscode-sema
+zed-sema	zed-sema
+intellij-sema	intellij-sema
+emacs-sema	emacs-sema
+helix-sema	helix-sema
+sema.nvim	sema.nvim
+sema.vim	sema.vim
+sublime-sema	sublime-sema
+gh-profile	.github
