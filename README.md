@@ -4,10 +4,11 @@ A single working dir that pulls together every [`sema-lisp`](https://github.com/
 repo so you can build, test, and manage the whole project from one spot.
 
 **Members are normal independent clones, not git submodules.** This repo tracks
-only the shared tooling — the root `Jakefile`, the `repos.tsv` manifest, and
-`scripts/ws.sh`. Each member (`sema`, `ui`, `tree-sitter-sema`, the editor
-plugins, …) is a plain checkout on `main` that you commit and push on its own.
-No detached-HEAD or submodule-pointer dance.
+only the shared tooling — the root `Jakefile`, the `repos.tsv` manifest, the
+`scripts/` helpers, and a workspace-local `.cargo/config.toml`. Each member
+(`sema`, `ui`, `tree-sitter-sema`, the editor plugins, …) is a plain checkout on
+`main` that you commit and push on its own. No detached-HEAD or submodule-pointer
+dance.
 
 ## Setup
 
@@ -22,16 +23,29 @@ jake -l                       # every member's recipes, namespaced
 ## Layout
 
 ```
-sema/                 ← this workspace repo
-├── Jakefile          composes each member + workspace recipes
-├── repos.tsv         member manifest (<dir> <github-repo>)
-├── scripts/ws.sh     bootstrap / update / status / foreach / pin
-├── sema/             the Rust monorepo (sema-lisp/sema)
-├── ui/               @sema-lang/ui component library
-├── tree-sitter-sema/ shared grammar
-├── vscode-sema/ zed-sema/ intellij-sema/ emacs-sema/ helix-sema/
-├── sema.nvim/ sema.vim/ sublime-sema/     editor plugins
-└── gh-profile/       the org .github profile repo
+sema/                    ← this workspace repo (shared tooling only)
+├── Jakefile             composes each member + workspace recipes
+├── repos.tsv            member manifest (<dir> <github-repo>)
+├── scripts/ws.sh        bootstrap / update / status / foreach / pin
+├── scripts/wt.sh        worktree lifecycle (wt-new / wt-rm / wt-list)
+├── scripts/disk.sh      build-cache sweep + target-size report
+└── .cargo/config.toml   workspace-local Rust cache (sccache, no incremental)
+
+members (cloned from repos.tsv):
+├── sema/                the Rust monorepo (sema-lisp/sema)
+├── sema-coder/          the sema-coder app
+├── pkg/                 the Sema package registry
+├── ui/                  @sema-lang/ui component library
+├── tree-sitter-sema/    shared grammar
+├── vscode-sema/         VS Code extension
+├── zed-sema/            Zed extension
+├── intellij-sema/       IntelliJ plugin
+├── emacs-sema/          Emacs mode
+├── helix-sema/          Helix support
+├── sema.nvim/           Neovim plugin
+├── sema.vim/            Vim plugin
+├── sublime-sema/        Sublime Text package
+└── gh-profile/          org .github profile repo (sema-lisp/.github)
 ```
 
 ## Common commands

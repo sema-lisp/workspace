@@ -29,6 +29,11 @@ submodules**.
   (`cd sema`, obey `sema/AGENTS.md`).
 - A specific editor plugin, the grammar, or the UI library → that member's dir.
 - Cross-repo status/build/test → the workspace `Jakefile` (below).
+- **If your cwd is `sema/` (or any mono worktree), you are still inside this
+  workspace.** This root `CLAUDE.md` and its **Worktrees** + **Disk hygiene**
+  rules below are MANDATORY there — obey `sema/AGENTS.md` for crate work *and*
+  these rules for worktrees/builds. Create worktrees with `jake wt-new` from the
+  workspace root, never `git worktree add` by hand.
 
 ## Jake from the workspace root
 
@@ -42,10 +47,60 @@ submodules**.
 | `jake bootstrap` | clone any missing members (or `./scripts/ws.sh bootstrap`) |
 | `jake foreach cmd='git fetch'` | run a command in every member |
 | `jake pin` | write `repos.lock` — a dir/repo/SHA snapshot |
+| `jake bootstrap` | clone missing members **+ install `sccache`/`cargo-sweep`** |
+| `jake wt-new name=<n> [branch=<b>] [member=sema]` | create a worktree under `.worktrees/` |
+| `jake wt-rm name=<n>` | remove a worktree (cargo-cleans its target first) |
+| `jake wt-list` | list all worktrees; flag any outside `.worktrees/` |
+| `jake sweep [days=3]` | reclaim stale build artifacts across ALL targets |
+| `jake sweep-preview [days=3]` | show what `sweep` would reclaim (deletes nothing) |
+| `jake target-sizes` | size of every `target/` + sccache + free space |
 | `jake sema.<r>` / `jake ui.<r>` | a specific member's recipe |
 
 The Jakefile `@import`s each member's **`@rooted`** Jakefile, so a missing member
 makes `jake` fail to parse until you `bootstrap`.
+
+## Worktrees — HARD REQUIREMENT
+
+Git worktrees are how parallel agents get isolation, but ungoverned they scatter
+across the disk and their `target/` dirs filled the volume to `ENOSPC` on
+2026-07-10. Therefore:
+
+- **Every new worktree MUST be created with `jake wt-new`** (member defaults to
+  `sema`): `jake wt-new name=fix-x branch=fix/x`. It places the worktree at
+  **`/Users/helge/code/sema/.worktrees/<name>` and nowhere else**.
+- **NEVER create a worktree anywhere else** — not as a bare `sema-*` sibling at
+  the workspace root, not in a member's own `.worktrees/`, not under `$HOME` or
+  `/tmp`, and **never `git worktree add` by hand.** `.worktrees/` at the
+  workspace root is the single sanctioned location.
+- **Remove worktrees ONLY with `jake wt-rm name=<n>`** — it `cargo clean`s the
+  target (reclaiming the space) before `git worktree remove` + `prune`. Never
+  `rm -rf` a worktree dir.
+- **Existing out-of-policy worktrees are WIP — do NOT move, delete, or "fix"
+  them.** `jake wt-list` marks them `OUT-OF-POLICY`; the rule binds **new**
+  worktrees only. Current known WIP lives outside `.worktrees/` (e.g. bare
+  `sema-*` siblings, `sema/.worktrees/*`, `~/.codex/worktrees/*`).
+
+## Disk hygiene & build cache — MUST follow
+
+Rust builds here are governed by the workspace-local `/.cargo/config.toml` (cargo
+discovers it by walking up from any member/worktree; it does **not** touch
+`~/.cargo`, unrelated projects, or the mono's cargo-dist release/CI builds):
+
+- **Incremental compilation is DISABLED and a shared `sccache` compile cache is
+  enforced** (`rustc-wrapper`), with a workspace-local cache at `/.sccache`
+  (20G cap). **Do not re-enable incremental or drop the wrapper.** The cache is
+  content-addressed and safe for concurrent worktree builds — it does *not*
+  share `target/` dirs, so parallel builds never lock or corrupt each other.
+- **`sccache` + `cargo-sweep` are required tools**; `jake bootstrap` installs
+  them. A missing `sccache` breaks every cargo build under the workspace.
+- **Reclaim space with `jake sweep [days=3]`** — recursively sweeps every
+  `target/` under the workspace (members + worktrees), removing only regenerable
+  artifacts older than N days; fresh/in-flight builds are kept. Preview first
+  with `jake sweep-preview`. Inspect usage with `jake target-sizes`.
+- **Run `jake sweep` when finishing worktrees or under disk pressure.** Unmanaged
+  per-worktree `target/` dirs (cargo never GCs superseded artifacts — one hit
+  20G of orphaned binaries) caused the 2026-07-10 ENOSPC outage. Prefer
+  `jake wt-rm` (which cleans as it removes) over leaving dead worktrees around.
 
 ## Constraints
 

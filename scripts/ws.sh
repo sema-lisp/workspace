@@ -27,7 +27,22 @@ case "$cmd" in
         echo "↓ cloning $ORG/$repo -> $dir"
         git clone "git@github.com:$ORG/$repo.git" "$ROOT/$dir"
       fi
-    done ;;
+    done
+    # Build-cache tooling required by .cargo/config.toml (sccache) and `jake sweep`.
+    # The workspace-root .cargo/config.toml sets rustc-wrapper=sccache, so a missing
+    # sccache breaks every cargo build under the workspace — install it here.
+    if command -v sccache >/dev/null 2>&1; then
+      echo "· sccache (present)"
+    else
+      echo "↓ installing sccache"
+      brew install sccache || cargo install sccache
+    fi
+    if command -v cargo-sweep >/dev/null 2>&1; then
+      echo "· cargo-sweep (present)"
+    else
+      echo "↓ installing cargo-sweep"
+      cargo install cargo-sweep
+    fi ;;
   update)
     members | while IFS=$'\t' read -r dir repo; do
       [ -d "$ROOT/$dir/.git" ] || { echo "✗ $dir missing (run bootstrap)"; continue; }

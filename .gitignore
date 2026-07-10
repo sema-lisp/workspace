@@ -9,6 +9,8 @@
 !/README.md
 !/CLAUDE.md
 !/scripts/
+!/.cargo/
+!/.cargo/config.toml
 
 # sema-coder — flagship app, un-ignored so the workspace can see it
 !/sema-coder

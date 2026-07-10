@@ -50,6 +50,42 @@ task pin:
 task foreach:
     ./scripts/ws.sh foreach {{cmd}}
 
+# ── Worktrees (the ONLY sanctioned way to create/remove them — see CLAUDE.md) ──
+
+@group worktree
+@desc "Create a git worktree under .worktrees/: jake wt-new name=fix-x [branch=fix/x] [member=sema]"
+task wt-new name="" branch="" member="sema":
+    ./scripts/wt.sh new {{name}} branch={{branch}} member={{member}}
+
+@group worktree
+@desc "Remove a .worktrees/ worktree (cargo-cleans its target first): jake wt-rm name=fix-x"
+task wt-rm name="":
+    ./scripts/wt.sh rm {{name}}
+
+@group worktree
+@desc "List all worktrees; flag any outside .worktrees/"
+task wt-list:
+    ./scripts/wt.sh list
+
+# ── Disk hygiene (build-cache sprawl reclaim + report) ──
+
+@group disk
+@desc "Reclaim stale Rust artifacts across ALL targets/worktrees: jake sweep [days=3]"
+task sweep days="3":
+    @needs cargo-sweep "cargo install cargo-sweep"
+    ./scripts/disk.sh sweep {{days}}
+
+@group disk
+@desc "Preview what jake sweep would reclaim (deletes nothing): jake sweep-preview [days=3]"
+task sweep-preview days="3":
+    @needs cargo-sweep "cargo install cargo-sweep"
+    ./scripts/disk.sh sweep {{days}} dry
+
+@group disk
+@desc "Report size of every target/ under the workspace + sccache + free space"
+task target-sizes:
+    ./scripts/disk.sh sizes
+
 # ── Aggregate build/test across members that expose the recipe ──
 
 @group all
