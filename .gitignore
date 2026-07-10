@@ -10,5 +10,8 @@
 !/CLAUDE.md
 !/scripts/
 
+# sema-coder — flagship app, un-ignored so the workspace can see it
+!/sema-coder
+
 # Never commit real secrets
 .env
