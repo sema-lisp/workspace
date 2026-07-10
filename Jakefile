@@ -13,6 +13,7 @@
 # `pkg.build`, `ts.test`, …). The mono's own namespaces (site/pg/wasm/bench/
 # fuzz/release) don't collide with the member aliases.
 @import "sema/Jakefile"
+@import "sema-coder/Jakefile"       as coder
 @import "pkg/Jakefile"              as pkg
 @import "ui/Jakefile"               as ui
 @import "tree-sitter-sema/Jakefile" as ts
