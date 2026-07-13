@@ -1,0 +1,32 @@
+# .clocignore — names cloc should skip when counting the workspace.
+# One file/dir NAME per line (basename, exact match). Consumed by
+# `jake cloc` via `cloc --exclude-list-file=.clocignore`. Keeps the LOC
+# count to hand-written source: no deps, build output, or benchmark corpora.
+#
+# NOTE: matches are by name, not path — e.g. `data` skips every dir named
+# `data` (incl. benchmarks/data, the 1BRC corpus). That's intended here.
+
+# ── Dependencies / package installs ──
+node_modules
+vendor
+.venv
+pkg-packages
+
+# ── Build & tool output ──
+target
+dist
+build
+out
+cache
+.vitepress
+pkg
+
+# ── Workspace tooling / caches (not source) ──
+.git
+.worktrees
+.sccache
+.jake
+.codex
+
+# ── Generated data / large corpora (not code) ──
+data

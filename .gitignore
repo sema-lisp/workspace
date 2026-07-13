@@ -8,6 +8,7 @@
 !/.env.example
 !/README.md
 !/CLAUDE.md
+!/.clocignore
 !/scripts/
 !/.cargo/
 !/.cargo/config.toml

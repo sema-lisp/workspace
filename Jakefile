@@ -87,6 +87,14 @@ task sweep-preview days="3":
 task target-sizes:
     ./scripts/disk.sh sizes
 
+# ── Reporting ──
+
+@group report
+@desc "Honest LOC count across the workspace (excludes deps/build/corpora via .clocignore): jake cloc [args='--by-file']"
+task cloc args="":
+    @needs cloc "brew install --HEAD cloc"
+    ./scripts/cloc.sh {{args}}
+
 # ── Aggregate build/test across members that expose the recipe ──
 
 @group all
