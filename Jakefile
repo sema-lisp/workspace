@@ -19,6 +19,7 @@
 @import "tree-sitter-sema/Jakefile" as ts
 @import "vscode-sema/Jakefile"      as vscode
 @import "intellij-sema/Jakefile"    as intellij
+@import "opencode-sema/Jakefile"   as opencode
 
 # Shared secrets (ANTHROPIC_API_KEY, …) for the mono's LLM/provider recipes.
 @dotenv
