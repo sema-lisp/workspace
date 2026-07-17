@@ -20,6 +20,7 @@
 @import "vscode-sema/Jakefile"      as vscode
 @import "intellij-sema/Jakefile"    as intellij
 @import "opencode-sema/Jakefile"   as opencode
+@import "pi-sema/Jakefile"          as pi
 
 # Shared secrets (ANTHROPIC_API_KEY, …) for the mono's LLM/provider recipes.
 @dotenv
@@ -99,11 +100,11 @@ task cloc args="":
 # ── Aggregate build/test across members that expose the recipe ──
 
 @group all
-@desc "Test the members that have a test recipe (sema, pkg, ui, grammar, intellij)"
-task test-all: [test, pkg.test, ui.test, ts.test, intellij.test]
+@desc "Test the members that have a test recipe (sema, pkg, ui, grammar, intellij, pi)"
+task test-all: [test, pkg.test, ui.test, ts.test, intellij.test, pi.test]
     echo "workspace: all member tests complete"
 
 @group all
-@desc "Build the core buildable members (sema, pkg, ui bundle, grammar)"
-task build-all: [build, pkg.build, ui.build, ts.generate]
+@desc "Build the core buildable members (sema, pkg, ui bundle, grammar, pi)"
+task build-all: [build, pkg.build, ui.build, ts.generate, pi.build]
     echo "workspace: core members built"
