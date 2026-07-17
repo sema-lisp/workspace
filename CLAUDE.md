@@ -86,20 +86,23 @@ Rust builds here are governed by the workspace-local `/.cargo/config.toml` (carg
 discovers it by walking up from any member/worktree; it does **not** touch
 `~/.cargo`, unrelated projects, or the mono's cargo-dist release/CI builds):
 
-- **Incremental compilation is DISABLED and a shared `sccache` compile cache is
-  enforced** (`rustc-wrapper`), with a workspace-local cache at `/.sccache`
-  (20G cap). **Do not re-enable incremental or drop the wrapper.** The cache is
-  content-addressed and safe for concurrent worktree builds — it does *not*
-  share `target/` dirs, so parallel builds never lock or corrupt each other.
-- **`sccache` + `cargo-sweep` are required tools**; `jake bootstrap` installs
-  them. A missing `sccache` breaks every cargo build under the workspace.
+- **Incremental compilation is ON (cargo default); the sccache wrapper is OFF**
+  (policy flipped 2026-07-17 — see `sema/docs/build-time-report.md`: sccache
+  cannot help edited code, hard-fails on `-C incremental`, and the ENOSPC driver
+  was per-worktree test binaries, not incremental caches). Do NOT re-add a
+  `rustc-wrapper` to `/.cargo/config.toml`; for a one-off cached clean build run
+  `CARGO_INCREMENTAL=0 RUSTC_WRAPPER=sccache cargo build` explicitly.
+- **`cargo-sweep` is a required tool** (`jake bootstrap` installs it); `sccache`
+  is optional (opt-in per command as above).
 - **Reclaim space with `jake sweep [days=3]`** — recursively sweeps every
   `target/` under the workspace (members + worktrees), removing only regenerable
   artifacts older than N days; fresh/in-flight builds are kept. Preview first
   with `jake sweep-preview`. Inspect usage with `jake target-sizes`.
 - **Run `jake sweep` when finishing worktrees or under disk pressure.** Unmanaged
   per-worktree `target/` dirs (cargo never GCs superseded artifacts — one hit
-  20G of orphaned binaries) caused the 2026-07-10 ENOSPC outage. Prefer
+  20G of orphaned binaries) caused the 2026-07-10 ENOSPC outage. Incremental
+  caches (~1.3G per worktree) make sweeping worktrees promptly MORE important,
+  not less — use `jake sweep days=1` during multi-worktree crunches. Prefer
   `jake wt-rm` (which cleans as it removes) over leaving dead worktrees around.
 
 ## Constraints

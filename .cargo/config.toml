@@ -1,33 +1,25 @@
-# Workspace-local Rust build-cache policy for the sema-lisp meta-repo.
+# Workspace-local Rust build policy for the sema-lisp meta-repo.
 #
 # Cargo discovers config by walking UP from the build cwd, so this file applies
 # to every member and every worktree under /Users/helge/code/sema — but NOT to
 # ~/.cargo, unrelated projects elsewhere, or the mono's cargo-dist release/CI
 # builds (those run in separate checkouts outside this tree). Member configs
-# (e.g. sema/.cargo/config.toml) merge on top and win on any key conflict; the
-# keys below don't conflict with any member config.
+# (e.g. sema/.cargo/config.toml) merge on top and win on any key conflict.
 #
-# Rationale: on 2026-07-10 the disk hit ENOSPC because 11 worktrees each kept an
-# independent, never-garbage-collected debug target/ (one was 20G of orphaned
-# hashed binaries). See ../CLAUDE.md "Disk hygiene & build cache".
-
-[build]
-# Cargo never GCs superseded incremental artifacts, so incremental caches grow
-# without bound across long-lived worktrees. sccache also cannot cache
-# incremental builds — disabling it is required for the wrapper below to help.
-incremental = false
-
-# Shared, content-addressed compile cache reused across ALL worktrees. Safe for
-# concurrent builds: entries are keyed on compiler+sources+flags and written
-# atomically, and — unlike a shared CARGO_TARGET_DIR — each worktree keeps its
-# own target/, so parallel builds never lock or corrupt each other.
-# Requires sccache on PATH (installed by `jake bootstrap`).
-rustc-wrapper = "sccache"
-
-[env]
-# Workspace-local cache dir: `relative = true` resolves ".sccache" against THIS
-# config file's parent (the workspace root), so it's stable no matter which
-# worktree triggers the build and nothing lands in ~/.cache. `force = true`
-# guarantees the workspace cache even if a global SCCACHE_DIR is already set.
-SCCACHE_DIR = { value = ".sccache", relative = true, force = true }
-SCCACHE_CACHE_SIZE = "20G"
+# Policy history: incremental was disabled 2026-07-10..2026-07-17 in favor of a
+# shared sccache wrapper after an ENOSPC outage. The 2026-07-17 build-time
+# investigation (sema/docs/build-time-report.md) measured that sccache gives the
+# edit→compile loop nothing (edited crates and all their dependents are
+# guaranteed cache misses) while incremental makes real-edit rebuilds ~2.2x
+# faster, and the actual ENOSPC driver was per-worktree integration-test
+# binaries (~100MB each), not incremental caches (~1.3G/worktree). So:
+#
+# - Incremental is ON (cargo's default) for fast edit loops.
+# - The sccache wrapper is OFF: sccache hard-fails on `-C incremental` builds,
+#   so the two are mutually exclusive. For a one-off cached clean build (e.g.
+#   CI-style bootstrap) run with:
+#     CARGO_INCREMENTAL=0 RUSTC_WRAPPER=sccache SCCACHE_DIR=/Users/helge/code/sema/.sccache cargo build
+#
+# Disk discipline REMAINS mandatory (cargo never GCs superseded artifacts):
+# run `jake sweep [days=1]` when finishing worktrees or under disk pressure,
+# and remove worktrees only via `jake wt-rm` (it cargo-cleans first).
