@@ -128,5 +128,5 @@ every member repo. Full rule in `sema/AGENTS.md` ("Writing style"); summary:
 - One term per concept; use names from the code verbatim.
 - State problem, cause, and fix explicitly, in that order.
 - No metaphors, invented idioms, or rhetorical language ("load-bearing",
-  "sharp edge", "seam", "beachhead", "north star", and similar are banned
+  "sharp edge", "seam", "beachhead", "north star", "substrate", and similar are banned
   unless literally technical). Report what changed, why, and what proves it.
