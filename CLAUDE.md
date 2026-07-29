@@ -118,3 +118,15 @@ discovers it by walking up from any member/worktree; it does **not** touch
   gitignored and not workspace members — leave them alone unless asked.
 - The `git stash` / `git checkout --` cautions from `sema/AGENTS.md` apply in
   every member: prefer worktrees; never clobber another agent's uncommitted work.
+
+## Writing style — plain technical English (all members)
+
+Applies to chat replies, code comments, commit messages, PR text, and docs in
+every member repo. Full rule in `sema/AGENTS.md` ("Writing style"); summary:
+
+- Use common words and short, direct sentences (ASD-STE100 where practical).
+- One term per concept; use names from the code verbatim.
+- State problem, cause, and fix explicitly, in that order.
+- No metaphors, invented idioms, or rhetorical language ("load-bearing",
+  "sharp edge", "seam", "beachhead", "north star", and similar are banned
+  unless literally technical). Report what changed, why, and what proves it.
