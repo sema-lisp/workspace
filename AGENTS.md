@@ -8,9 +8,9 @@ this before doing anything here.
 
 Every member directory (`sema/`, `ui/`, `tree-sitter-sema/`, `vscode-sema/`,
 `zed-sema/`, `intellij-sema/`, `emacs-sema/`, `helix-sema/`, `sema.nvim/`,
-`sema.vim/`, `sublime-sema/`, `gh-profile/`, `pkg/`) is a **separate git repo
-with its own remote**. They are independent clones (see `repos.tsv`), **not git
-submodules**.
+`sema.vim/`, `sublime-sema/`, `gh-profile/`, `pkg/`, `pkg-packages/`) is a
+**separate git repo with its own remote**. They are independent clones (see
+`repos.tsv`), **not git submodules**.
 
 - **Commit and push member changes inside that member**, to its own remote.
   `cd <member> && git add … && git commit && git push`. Never try to commit a
@@ -113,7 +113,7 @@ discovers it by walking up from any member/worktree; it does **not** touch
   (no detached-HEAD / two-step-commit friction).
 - **Secrets live in `.env`** (gitignored, loaded via `@dotenv`). Never commit real
   keys; `.env.example` is the template.
-- Non-`sema-lisp` scratch dirs may exist here (e.g. `pkg-packages/`); they're
+- Non-`sema-lisp` scratch dirs may exist here; they're
   gitignored and not workspace members — leave them alone unless asked.
 - The `git stash` / `git checkout --` cautions from `sema/AGENTS.md` apply in
   every member: prefer worktrees; never clobber another agent's uncommitted work.

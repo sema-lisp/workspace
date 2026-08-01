@@ -4,6 +4,7 @@
 sema	sema
 sema-coder	sema-coder
 pkg	pkg
+pkg-packages	packages
 ui	ui
 tree-sitter-sema	tree-sitter-sema
 vscode-sema	vscode-sema

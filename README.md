@@ -59,6 +59,7 @@ sema/                     this workspace repository
 ├── sema/                 Rust language, VM, CLI, LSP, DAP, and notebook
 ├── sema-coder/           sema-coder application
 ├── pkg/                  package registry
+├── pkg-packages/         first-party package monorepo
 ├── ui/                   @sema-lang/ui component library
 ├── tree-sitter-sema/     shared grammar
 ├── vscode-sema/          VS Code extension
