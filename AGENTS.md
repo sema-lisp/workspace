@@ -35,6 +35,95 @@ Every member directory (`sema/`, `ui/`, `tree-sitter-sema/`, `vscode-sema/`,
   these rules for worktrees/builds. Create worktrees with `jake wt-new` from the
   workspace root, never `git worktree add` by hand.
 
+## Shipping a language feature across every editor plugin
+
+A new special form, macro, or builtin in the mono is not delivered until every
+plugin highlights it **and** each plugin's registry has a release carrying that
+change. Merging the plugin PRs is only half the job — most registries ship from
+a **git tag**, not from `main`.
+
+### Order of operations
+
+1. **Derive the canonical list of new names from the mono**, not from memory —
+   cross-check at least two sources (`crates/sema-eval/src/prelude.rs`,
+   the `register()` calls in `crates/sema-stdlib/`, `crates/sema-docs/entries/`,
+   `website/.vitepress/sema.tmLanguage.json`). Record both full names and short
+   aliases (`workflow/approval` *and* `approval`).
+2. **Apply to every plugin** (list below), then check the matrix both ways: a
+   canonical name missing from a plugin, and a name a plugin highlights that
+   does not exist (a typo ships as a real defect).
+3. **Also update indent/keyword classification, not just colours.** A prelude
+   macro with one distinguished argument plus a body (`policy/without`) belongs
+   in emacs `sema--indent-1-forms` and vim `lispwords`; a plain builtin does
+   not. Getting this backwards is the most common mistake here.
+4. **Merge each plugin PR** (own repo, own remote, own CI).
+5. **Release only the plugins whose registry needs it** — see the table.
+6. **Verify the registry actually serves the new version** afterwards; a green
+   workflow is not proof a marketplace accepted the upload.
+
+### What each registry needs (verified 2026-08-04)
+
+| Plugin | Publishes when | Users auto-update? | Third-party gate |
+| --- | --- | --- | --- |
+| `vscode-sema` | push tag `v*` → VS Marketplace **and** Open VSX | **Yes**, default on (~2 h delay) | No |
+| `intellij-sema` | push tag `v*` → JetBrains Marketplace | **No** — the IDE only notifies | **Yes — JetBrains reviews every update, not just the first** |
+| `sublime-sema` | push a bare semver tag (`0.4.0`) | Yes, channel polled ~hourly | No (channel PR already merged) |
+| `emacs-sema` | **push to `main`** — MELPA rebuilds from the default branch | **No** — `M-x package-upgrade-all` is manual | No |
+| `zed-sema` | a PR to `zed-industries/extensions` per version bump (a tag can auto-**open** it, not merge it) | Yes, once listed | **Yes — a Zed maintainer must merge** |
+| `helix-sema` | a PR to `helix-editor/helix` core | With the next Helix release | **Yes — upstream merge** |
+| `sema.nvim`, `sema.vim` | push to `main` — plugin managers track the branch | On the user's next plugin update | No |
+| `tree-sitter-sema` | push tag `v*` | Consumers pin their own revision | No |
+| `ui` | push tag `v*` → npm (Trusted Publishing, OIDC) | Dependents bump themselves | No |
+
+Consequences worth internalising:
+
+- **MELPA needs no tag.** `sema-mode` is on MELPA *unstable*, which builds from
+  the default branch on a schedule, so merging to `main` already ships it. A tag
+  is only needed to appear on **MELPA Stable**, which builds from tags.
+- **JetBrains and Zed cannot be finished by us.** Both need a human on the other
+  side. Tag/PR, then say the release is *submitted*, not *shipped*.
+- **Zed: a tag does not publish, but it can author the PR.** Both a first
+  submission and every later version bump go through a PR to
+  `zed-industries/extensions` that updates the submodule commit *and* the
+  `version` in `extensions.toml` (`zed.dev/docs/extensions/developing-extensions`).
+  Zed's own bot (`app/zed-zippy`) opens *and* self-merges those bumps off a
+  release tag — but only for extensions living in Zed's orgs: of its last 60
+  merged PRs, 56 were `zed-extensions/*` and 1 `zed-industries/*`, **none from a
+  third-party org**. For `sema-lisp/zed-sema` the merge is done by a Zed
+  maintainer. The community action `huacnlee/zed-extension-action` triggers on a
+  `v*` tag and opens the PR for us; it cannot merge it. Do not assume a tag ships
+  a Zed release — check `extensions.toml` for the version.
+- **VS Code + Open VSX + Package Control are the whole win from a tag push** —
+  three registries, no human gate. Do these first.
+
+### Version source of truth differs per repo — check before tagging
+
+- `vscode-sema` — **the tag wins**: `publish.yml` runs `npm pkg set version`
+  from the tag, so `package.json` is overwritten at publish time. Bump it in the
+  repo anyway so the committed value is not misleading.
+- `intellij-sema` — **`gradle.properties` wins**: `pluginVersion` also selects
+  the Marketplace channel (a pre-release suffix publishes to `beta`). The
+  release workflow **fails when the tag does not match it**. Bump, commit, then
+  tag.
+- `sublime-sema` — **the tag is the only version**; nothing in the repo declares
+  one. Existing tags are bare semver (`0.3.2`), not `v`-prefixed.
+- `ui`, `tree-sitter-sema` — tag `v*`.
+
+### Stale monorepo-split tags — do not push tags blindly
+
+`intellij-sema`, `emacs-sema`, `zed-sema`, `helix-sema`, and `sema.vim` each
+carry ~30–43 **local-only** `v1.x` tags (up to `v1.28.1`) inherited when they
+were split out of `sema-lisp/sema`. **None of them exist on any remote**, and
+they are not plugin releases — `intellij-sema`'s first Marketplace version is
+`1.0.0`, published long after `v1.28.1`.
+
+- **Never run `git push --tags`** in a member repo. It would publish dozens of
+  meaningless tags and, in `intellij-sema`, fire the release workflow once per
+  tag. Push one tag explicitly: `git push origin v1.1.0`.
+- Do not read those tags as release history, and do not compute "commits since
+  the last release" from them — compare against the registry's published
+  version instead.
+
 ## Jake from the workspace root
 
 `jake -l` lists every member's recipes namespaced (`sema.build`, `ui.test`,
