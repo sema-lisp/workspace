@@ -86,6 +86,18 @@ task sweep-preview days="3":
     ./scripts/disk.sh sweep {{days}} dry
 
 @group disk
+@desc "Cap EACH target/ at a size, oldest artifacts first: jake sweep-cap [max=10GB]"
+task sweep-cap max="10GB":
+    @needs cargo-sweep "cargo install cargo-sweep"
+    ./scripts/disk.sh cap {{max}}
+
+@group disk
+@desc "Preview what jake sweep-cap would reclaim (deletes nothing): jake sweep-cap-preview [max=10GB]"
+task sweep-cap-preview max="10GB":
+    @needs cargo-sweep "cargo install cargo-sweep"
+    ./scripts/disk.sh cap {{max}} dry
+
+@group disk
 @desc "Report size of every target/ under the workspace + sccache + free space"
 task target-sizes:
     ./scripts/disk.sh sizes

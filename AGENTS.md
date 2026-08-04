@@ -141,6 +141,8 @@ they are not plugin releases — `intellij-sema`'s first Marketplace version is
 | `jake wt-list` | list all worktrees; flag any outside `.worktrees/` |
 | `jake sweep [days=3]` | reclaim stale build artifacts across ALL targets |
 | `jake sweep-preview [days=3]` | show what `sweep` would reclaim (deletes nothing) |
+| `jake sweep-cap [max=10GB]` | cap EACH `target/` at a size, oldest artifacts first |
+| `jake sweep-cap-preview [max=10GB]` | show what `sweep-cap` would reclaim |
 | `jake target-sizes` | size of every `target/` + sccache + free space |
 | `jake sema.<r>` / `jake ui.<r>` | a specific member's recipe |
 
@@ -192,6 +194,16 @@ discovers it by walking up from any member/worktree; it does **not** touch
   caches (~1.3G per worktree) make sweeping worktrees promptly MORE important,
   not less — use `jake sweep days=1` during multi-worktree crunches. Prefer
   `jake wt-rm` (which cleans as it removes) over leaving dead worktrees around.
+- **When `jake sweep` reclaims nothing, use `jake sweep-cap [max=10GB]`.** An
+  age-based sweep is a no-op while every artifact is fresh, which is exactly the
+  state a release is in: each version bump compiles a new set, cargo keeps the
+  superseded ones, and `days=1` still matches nothing. `sweep-cap` evicts the
+  least-recently-used artifacts until each `target/` is under `max`, regardless
+  of age. During the 1.34.x releases `sema/target` reached **52G** this way and
+  the linker began failing with `ld: write() failed, errno=28` — which reads as
+  unrelated test flakiness, not a full disk. `sweep-cap` reclaimed 37G, then 17G.
+  Reach for it whenever a build fails with errno 28, a linker error, or tests
+  start failing in ways that do not reproduce in isolation.
 
 ## Constraints
 
