@@ -1,0 +1,107 @@
+#!/usr/bin/env sema
+;; status.sema — workspace member status, written in Sema. Same row shape and
+;; brand chrome as sema-coder's test.sema (wordmark header, glyph + padded
+;; name + dim detail), but self-contained: no `load` of a member repo's
+;; files, since each member here is its own independent git repo (AGENTS.md).
+;;
+;; Usage:
+;;   jake status
+;;   ./scripts/status.sema
+
+;; ── Palette (local copy of the sema brand chrome) ──────────────────
+
+(defun accent (text)     (term/rgb text 200 168 85))
+(defun accent-dim (text) (term/rgb text 160 136 56))
+(defun muted (text)      (term/rgb text 150 140 121))
+(defun faint (text)      (term/dim text))
+(defun ok (text)   (term/green text))
+(defun warn (text) (term/yellow text))
+(defun bad (text)  (term/red text))
+(defun bright (text) (term/rgb text 255 255 255))
+
+(defun wordmark ()
+  (string/append (accent "(") (bright (term/style "sema" :bold)) (accent ")")))
+(defun wordmark-with (suffix)
+  (string/append (wordmark) " " (accent-dim (term/style suffix :bold))))
+
+;; ── Paths resolve relative to this script, not cwd ─────────────────
+
+(defun script-dir ()
+  (let loop ((rem (sys/args)))
+    (cond ((null? rem) ".")
+          ((string/ends-with? (car rem) "status.sema") (path/dir (car rem)))
+          (else (loop (cdr rem))))))
+
+(define root (path/dir (script-dir)))
+
+(defun members ()
+  (->> (file/read-lines (path/join root "repos.tsv"))
+       (map string/trim)
+       (filter #(and (not (= % "")) (not (string/starts-with? % "#"))))
+       (map #(string/split % "\t"))))
+
+;; ── Per-member git status ────────────────────────────────────────────
+
+(defun non-empty-lines (s)
+  (filter #(not (= (string/trim %) "")) (string/split s "\n")))
+
+(defun member-info (m)
+  (let* ((dir      (nth m 0))
+         (repo     (nth m 1))
+         (dir-path (path/join root dir)))
+    (if (not (file/is-directory? (path/join dir-path ".git")))
+      {:dir dir :repo repo :missing #t}
+      (let* ((branch  (string/trim (get (shell "git" "rev-parse" "--abbrev-ref" "HEAD" {:cwd dir-path}) :stdout "")))
+             (changed (length (non-empty-lines (get (shell "git" "status" "--porcelain" {:cwd dir-path}) :stdout "")))))
+        {:dir dir :repo repo :missing #f :branch branch :changed changed}))))
+
+;; ── Open PR counts — one `gh search` covers every member ────────────
+;; #f means "unknown" (no gh, or not authenticated) — not the same as zero.
+
+(defun pr-counts ()
+  (try
+    (let* ((res   (shell "gh" "search" "prs" "--owner" "sema-lisp" "--state" "open"
+                          "--limit" "200" "--json" "repository" "-q" ".[].repository.name"))
+           (names (non-empty-lines (get res :stdout ""))))
+      (if (= (get res :exit-code 1) 0) (frequencies names) #f))
+    (catch e #f)))
+
+;; ── Report ────────────────────────────────────────────────────────
+
+(defun pr-field (repo counts)
+  (if (not counts)
+    (muted (string/pad-right "-" 4))
+    (let* ((n    (get counts repo 0))
+           (text (string/pad-right (number->string n) 4)))
+      (if (= n 0) (faint text) text))))
+
+(defun report-row (m counts)
+  (if (:missing m)
+    (println f"   ${(bad "✖")} ${(bad (string/pad-right (:dir m) 18))} ${(bad "missing")}")
+    (let* ((clean? (= (:changed m) 0))
+           (glyph  (if clean? (ok "✔") (warn "●")))
+           (name   (string/pad-right (:dir m) 18))
+           (state  (muted (string/pad-right (if clean? "clean" f"${(:changed m)} changed") 11))))
+      (println f"   ${glyph} ${name} ${state} ${(pr-field (:repo m) counts)} ${(faint (:branch m))}"))))
+
+;; ── Run ──────────────────────────────────────────────────────────
+
+(println "")
+(println (string/append "   " (wordmark-with "status")))
+(println "")
+
+(define t0 (time-ms))
+(define infos (map member-info (members)))
+(define counts (pr-counts))
+
+(for-each #(report-row % counts) infos)
+
+(define present (filter #(not (:missing %)) infos))
+(define dirty   (filter #(> (:changed %) 0) present))
+(define elapsed (- (time-ms) t0))
+
+(println "")
+(println
+  (string/append "   "
+    (muted f"${(length infos)} members · ${(length dirty)} with local changes · ${(/ elapsed 1000.0)}s")))
+(println "")

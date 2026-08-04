@@ -41,7 +41,8 @@ task update-all:
 @group workspace
 @desc "Short git status for every member"
 task status:
-    ./scripts/ws.sh status
+    @needs sema
+    ./scripts/status.sema
 
 @group workspace
 @desc "Write repos.lock — a dir/repo/SHA snapshot of every member"

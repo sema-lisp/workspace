@@ -5,9 +5,10 @@
 # Usage:
 #   ws.sh bootstrap          Clone any missing member repos
 #   ws.sh update             Fetch + fast-forward each member on its main branch
-#   ws.sh status             Short git status for each member
 #   ws.sh foreach <cmd...>   Run <cmd> inside each member repo
 #   ws.sh pin                Write repos.lock (dir<TAB>repo<TAB>sha) for a snapshot
+#
+# `jake status` is implemented in Sema — see ./status.sema — not here.
 set -euo pipefail
 
 ORG="sema-lisp"
@@ -48,27 +49,6 @@ case "$cmd" in
       [ -d "$ROOT/$dir/.git" ] || { echo "✗ $dir missing (run bootstrap)"; continue; }
       echo "⟳ $dir"; git -C "$ROOT/$dir" pull --ff-only --quiet || echo "  (not fast-forwardable — resolve by hand)"
     done ;;
-  status)
-    # Open PR counts for every member in ONE search call, rather than one API
-    # call per repo. Stays empty when gh is missing or unauthenticated, and the
-    # column then shows "-" — an unknown count is not the same as zero.
-    prs=""
-    if command -v gh >/dev/null 2>&1; then
-      prs="$(gh search prs --owner "$ORG" --state open --limit 200 --json repository -q '.[].repository.name' 2>/dev/null | sort | uniq -c || true)"
-    fi
-    printf '%-18s %-11s %-4s %s\n' "MEMBER" "STATE" "PRS" "BRANCH"
-    members | while IFS=$'\t' read -r dir repo; do
-      [ -d "$ROOT/$dir/.git" ] || { echo "✗ $dir missing"; continue; }
-      br="$(git -C "$ROOT/$dir" rev-parse --abbrev-ref HEAD)"
-      n="$(git -C "$ROOT/$dir" status --porcelain | wc -l | tr -d ' ')"
-      if [ -n "$prs" ]; then
-        pr="$(printf '%s\n' "$prs" | awk -v r="$repo" '$2 == r { print $1 }')"
-        pr="${pr:-0}"
-      else
-        pr="-"
-      fi
-      printf '%-18s %-11s %-4s %s\n' "$dir" "$([ "$n" = 0 ] && echo clean || echo "$n changed")" "$pr" "$br"
-    done ;;
   foreach)
     # An omitted `cmd=` reaches here as no arguments at all (jake expands an
     # unfilled parameter to nothing), which would silently visit every member
@@ -87,5 +67,5 @@ case "$cmd" in
     done
     echo "Wrote repos.lock ($(wc -l < "$ROOT/repos.lock" | tr -d ' ') members)" ;;
   *)
-    echo "usage: ws.sh {bootstrap|update|status|foreach <cmd>|pin}" >&2; exit 2 ;;
+    echo "usage: ws.sh {bootstrap|update|foreach <cmd>|pin}" >&2; exit 2 ;;
 esac
