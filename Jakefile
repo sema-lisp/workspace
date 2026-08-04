@@ -50,7 +50,7 @@ task pin:
 
 @group workspace
 @desc "Run a command in every member repo: jake foreach cmd='git fetch'"
-task foreach:
+task foreach cmd="":
     ./scripts/ws.sh foreach {{cmd}}
 
 # ── Worktrees (the ONLY sanctioned way to create/remove them — see CLAUDE.md) ──

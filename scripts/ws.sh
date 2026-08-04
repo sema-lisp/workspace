@@ -56,6 +56,10 @@ case "$cmd" in
       printf '%-18s %-8s %s\n' "$dir" "$br" "$([ "$n" = 0 ] && echo clean || echo "$n changed")"
     done ;;
   foreach)
+    # An omitted `cmd=` reaches here as no arguments at all (jake expands an
+    # unfilled parameter to nothing), which would silently visit every member
+    # and run nothing.
+    [ $# -gt 0 ] || { echo "ws.sh: foreach needs a command (usage: jake foreach cmd='git fetch')" >&2; exit 2; }
     members | while IFS=$'\t' read -r dir repo; do
       [ -d "$ROOT/$dir/.git" ] || continue
       echo "=== $dir ==="; ( cd "$ROOT/$dir" && "$@" )
