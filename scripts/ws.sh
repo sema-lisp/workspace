@@ -49,11 +49,25 @@ case "$cmd" in
       echo "⟳ $dir"; git -C "$ROOT/$dir" pull --ff-only --quiet || echo "  (not fast-forwardable — resolve by hand)"
     done ;;
   status)
+    # Open PR counts for every member in ONE search call, rather than one API
+    # call per repo. Stays empty when gh is missing or unauthenticated, and the
+    # column then shows "-" — an unknown count is not the same as zero.
+    prs=""
+    if command -v gh >/dev/null 2>&1; then
+      prs="$(gh search prs --owner "$ORG" --state open --limit 200 --json repository -q '.[].repository.name' 2>/dev/null | sort | uniq -c || true)"
+    fi
+    printf '%-18s %-11s %-4s %s\n' "MEMBER" "STATE" "PRS" "BRANCH"
     members | while IFS=$'\t' read -r dir repo; do
       [ -d "$ROOT/$dir/.git" ] || { echo "✗ $dir missing"; continue; }
       br="$(git -C "$ROOT/$dir" rev-parse --abbrev-ref HEAD)"
       n="$(git -C "$ROOT/$dir" status --porcelain | wc -l | tr -d ' ')"
-      printf '%-18s %-8s %s\n' "$dir" "$br" "$([ "$n" = 0 ] && echo clean || echo "$n changed")"
+      if [ -n "$prs" ]; then
+        pr="$(printf '%s\n' "$prs" | awk -v r="$repo" '$2 == r { print $1 }')"
+        pr="${pr:-0}"
+      else
+        pr="-"
+      fi
+      printf '%-18s %-11s %-4s %s\n' "$dir" "$([ "$n" = 0 ] && echo clean || echo "$n changed")" "$pr" "$br"
     done ;;
   foreach)
     # An omitted `cmd=` reaches here as no arguments at all (jake expands an

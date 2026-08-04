@@ -82,7 +82,7 @@ directories.
 | Command | What it does |
 | --- | --- |
 | `jake bootstrap` | Clone missing members and install workspace build-cache tools |
-| `jake status` | Show the branch and short status of every member |
+| `jake status` | Show the branch, short status, and open PR count of every member |
 | `jake update-all` | Fast-forward every member on its current branch |
 | `jake foreach cmd='git fetch'` | Run a command in every member |
 | `jake pin` | Write a `repos.lock` snapshot of member revisions |

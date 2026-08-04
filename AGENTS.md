@@ -42,7 +42,7 @@ Every member directory (`sema/`, `ui/`, `tree-sitter-sema/`, `vscode-sema/`,
 
 | Command | Effect |
 | --- | --- |
-| `jake status` | git status across all members |
+| `jake status` | git status across all members + open PR count per repo |
 | `jake update-all` | fast-forward every member on `main` |
 | `jake bootstrap` | clone missing members and install `sccache`/`cargo-sweep` (or `./scripts/ws.sh bootstrap`) |
 | `jake foreach cmd='git fetch'` | run a command in every member |
